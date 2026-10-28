@@ -58,6 +58,15 @@ interface ExportFile {
   events: BattleEvent[];
 }
 
+/** 埋め込み表示（iframe）ではダウンロードが禁止されることがあるため、書き出しボタンを隠す */
+export const canDownload: boolean = (() => {
+  try {
+    return window.top === window.self;
+  } catch {
+    return false;
+  }
+})();
+
 export function downloadEvents(events: BattleEvent[], filename: string): void {
   const data: ExportFile = { app: 'dance-mc-panel', version: 1, exportedAt: new Date().toISOString(), events };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

@@ -15,7 +15,7 @@ import {
   unmarkBattler,
 } from '../../model';
 import { isRunning, pauseWatch, startWatch, stoppedWatch } from '../../time';
-import { downloadEvents } from '../../storage';
+import { canDownload, downloadEvents } from '../../storage';
 import { useNow } from '../../hooks/useNow';
 import { useWakeLock } from '../../hooks/useWakeLock';
 import { Modal, useDialogs } from '../common/Dialogs';
@@ -230,9 +230,11 @@ export function LiveScreen() {
               ↺ この試合の進行をリセット
             </button>
             <p className="menu-section">データ</p>
-            <button className="btn btn-block btn-lg" onClick={() => downloadEvents([ev], `${ev.name}.json`)}>
-              ⬇ このイベントを書き出し
-            </button>
+            {canDownload && (
+              <button className="btn btn-block btn-lg" onClick={() => downloadEvents([ev], `${ev.name}.json`)}>
+                ⬇ このイベントを書き出し
+              </button>
+            )}
             <button
               className="btn btn-block btn-lg"
               onClick={() => {

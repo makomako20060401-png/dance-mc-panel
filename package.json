@@ -9,7 +9,8 @@
     "preview": "vite preview --host",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "e2e": "node e2e/smoke.cjs"
+    "e2e": "node e2e/smoke.cjs",
+    "build:single": "npm run build && node scripts/build-single.mjs"
   },
   "dependencies": {
     "immer": "^11.2.9",

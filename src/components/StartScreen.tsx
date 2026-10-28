@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useStore } from '../store';
 import { duplicateEvent, FORMAT_LABEL, newEvent } from '../model';
-import { downloadEvents, parseImport } from '../storage';
+import { canDownload, downloadEvents, parseImport } from '../storage';
 import { useDialogs } from './common/Dialogs';
 
 function formatDate(ms: number): string {
@@ -115,8 +115,14 @@ export function StartScreen() {
 
       <section className="section">
         <h2 className="section-title">バックアップ</h2>
-        <p className="muted small">データはこの端末のブラウザ内に自動保存されます。機種変更や念のための控えにはファイルへ書き出してください。</p>
+        <p className="muted small">
+          データはこの端末のブラウザ内に自動保存されます。
+          {canDownload
+            ? '機種変更や念のための控えにはファイルへ書き出してください。'
+            : 'この表示方法ではファイルへの書き出しができません。'}
+        </p>
         <div className="row-wrap">
+          {canDownload && (
           <button
             className="btn"
             disabled={events.length === 0}
@@ -124,6 +130,7 @@ export function StartScreen() {
           >
             ⬇ すべて書き出し
           </button>
+          )}
           <button className="btn" onClick={() => fileRef.current?.click()}>
             ⬆ ファイルから読み込み
           </button>
