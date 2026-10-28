@@ -4,6 +4,8 @@ import {
   changeFormat,
   currentMatch,
   applyMatchups,
+  inkOn,
+  swapTeams,
   duplicateEvent,
   nextTeam,
   parseMatchups,
@@ -331,5 +333,30 @@ describe('対戦カードの一括入力', () => {
     expect(ev.matches[0].battlers[0].name).toBe('既存');
     expect(ev.matches[1].battlers.map((b) => b.name)).toEqual(['A', 'B']);
     expect(ev.matches[2].battlers.map((b) => b.name)).toEqual(['C', 'D']);
+  });
+});
+
+describe('チームの入れ替えと色', () => {
+  it('名前・色・メンバーをまとめて上下入れ替え、踊った印と担当は残る', () => {
+    let m = newMatch('teams');
+    m.teams[0].name = 'FUNKY';
+    m.teams[1].name = 'BREAK';
+    m.teams[1].color = '#16a34a';
+    m.battlers = [newBattler('a1', 'A'), newBattler('b1', 'B'), newBattler('b2', 'B')];
+    m = produce(m, (d) => void selectBattler(d, d.battlers[1].id, 1000));
+    m = produce(m, swapTeams);
+    expect(m.teams.map((t) => [t.id, t.name, t.color])).toEqual([
+      ['A', 'BREAK', '#16a34a'],
+      ['B', 'FUNKY', '#2563eb'],
+    ]);
+    expect(m.battlers.map((b) => `${b.name}:${b.teamId}`)).toEqual(['a1:B', 'b1:A', 'b2:A']);
+    expect(m.currentBattlerId).toBe(m.battlers[1].id);
+    expect(isDanced(m, m.battlers[1].id)).toBe(true);
+  });
+
+  it('色の上の文字は読みやすい方（白か黒）', () => {
+    expect(inkOn('#1f2937')).toBe('#fff');
+    expect(inkOn('#2563eb')).toBe('#fff');
+    expect(inkOn('#facc15')).toBe('#111');
   });
 });

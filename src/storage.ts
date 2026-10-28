@@ -1,5 +1,5 @@
 import type { AppState, BattleEvent } from './types';
-import { DEFAULT_TIMERS, newMatch } from './model';
+import { DEFAULT_TEAM_COLOR, DEFAULT_TIMERS, newMatch } from './model';
 
 const KEY = 'dance-mc-panel/v1';
 
@@ -18,7 +18,12 @@ function normalizeEvent(raw: BattleEvent): BattleEvent {
     screen: raw.screen ?? { kind: 'setup', step: 'format' },
   };
   const base = newMatch(ev.format);
-  ev.matches = (raw.matches?.length ? raw.matches : [base]).map((m) => ({ ...newMatch(ev.format), ...m }));
+  ev.matches = (raw.matches?.length ? raw.matches : [base]).map((m) => {
+    const merged = { ...newMatch(ev.format), ...m };
+    // チーム色がなかった頃のデータには既定色を付ける
+    merged.teams = merged.teams.map((t) => ({ ...t, color: t.color || DEFAULT_TEAM_COLOR[t.id] }));
+    return merged;
+  });
   return ev;
 }
 

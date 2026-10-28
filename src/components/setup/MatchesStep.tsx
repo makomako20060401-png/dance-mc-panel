@@ -12,11 +12,14 @@ import {
   parseMatchups,
   removeBattler,
   removeMatch,
+  swapTeams,
+  TEAM_COLORS,
   teamMembers,
   validateMatches,
 } from '../../model';
 import { useDialogs } from '../common/Dialogs';
 import { NameListEditor } from '../common/NameListEditor';
+import { ColorPicker } from '../common/ColorPicker';
 
 type MatchRecipe = (m: Match) => void;
 
@@ -192,38 +195,52 @@ function OneVsOneEditor({ match, onUpdate }: { match: Match; onUpdate: (r: Match
 }
 
 function TeamsEditor({ match, onUpdate }: { match: Match; onUpdate: (r: MatchRecipe) => void }) {
+  const updateTeam = (tid: TeamId, patch: { name?: string; color?: string }) =>
+    onUpdate((m) => {
+      const t = m.teams.find((x) => x.id === tid);
+      if (t) Object.assign(t, patch);
+    });
+
+  const block = (tid: TeamId) => {
+    const team = match.teams.find((t) => t.id === tid)!;
+    return (
+      <div key={tid} className="team-block" style={{ '--team': team.color } as React.CSSProperties}>
+        <div className="team-block-head">
+          <span className="team-pos">{tid === 'A' ? '上段' : '下段'}</span>
+          <span className="field-label">チーム{tid}</span>
+        </div>
+        <input
+          className={`input${team.name.trim() ? '' : ' input-empty'}`}
+          placeholder="チーム名を入力"
+          aria-label={`チーム${tid}の名前`}
+          value={team.name}
+          onChange={(e) => updateTeam(tid, { name: e.target.value })}
+        />
+        <ColorPicker
+          label={`チーム${tid}の色`}
+          value={team.color}
+          options={TEAM_COLORS}
+          onChange={(color) => updateTeam(tid, { color })}
+        />
+        <NameListEditor
+          battlers={teamMembers(match, tid)}
+          placeholder={`チーム${tid}のメンバー名`}
+          onAdd={(name) => onUpdate((m) => void m.battlers.push(newBattler(name, tid)))}
+          onRename={(id, name) => onUpdate((m) => renameBattler(m, id, name))}
+          onRemove={(id) => onUpdate((m) => removeBattler(m, id))}
+          onMove={(id, dir) => onUpdate((m) => moveBattler(m, id, dir))}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="teams-editor">
-      {(['A', 'B'] as TeamId[]).map((tid) => {
-        const team = match.teams.find((t) => t.id === tid)!;
-        return (
-          <div key={tid} className={`team-block team-${tid}`}>
-            <label className="field">
-              <span className="field-label">チーム{tid} の名前</span>
-              <input
-                className={`input${team.name.trim() ? '' : ' input-empty'}`}
-                placeholder="チーム名を入力"
-                value={team.name}
-                onChange={(e) =>
-                  onUpdate((m) => {
-                    const t = m.teams.find((x) => x.id === tid);
-                    if (t) t.name = e.target.value;
-                  })
-                }
-              />
-            </label>
-            <span className="field-label">メンバー</span>
-            <NameListEditor
-              battlers={teamMembers(match, tid)}
-              placeholder={`チーム${tid}のメンバー名`}
-              onAdd={(name) => onUpdate((m) => void m.battlers.push(newBattler(name, tid)))}
-              onRename={(id, name) => onUpdate((m) => renameBattler(m, id, name))}
-              onRemove={(id) => onUpdate((m) => removeBattler(m, id))}
-              onMove={(id, dir) => onUpdate((m) => moveBattler(m, id, dir))}
-            />
-          </div>
-        );
-      })}
+      {block('A')}
+      <button type="button" className="btn btn-sm swap-btn" onClick={() => onUpdate(swapTeams)}>
+        ⇅ 上下を入れ替え
+      </button>
+      {block('B')}
     </div>
   );
 }

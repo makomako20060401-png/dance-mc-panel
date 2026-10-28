@@ -17,7 +17,7 @@ const js = readFileSync(join(dist, jsPath), 'utf8').replace(/<\/script/gi, '<\\/
 const title = html.match(/<title>.*<\/title>/)?.[0] ?? '<title>ダンスバトル MCパネル</title>';
 
 const out = `${title}
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" content="#ffffff">
 <meta name="description" content="ダンスバトルMC専用コントロールパネル">
 <style>${css}</style>
 <div id="root"></div>

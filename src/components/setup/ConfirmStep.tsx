@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useActiveEvent } from '../../store';
 import { SendDialog } from '../Transfer';
 import type { BattleEvent, SetupStep, TeamId } from '../../types';
-import { FORMAT_LABEL, teamMembers, teamName, validateEvent } from '../../model';
+import { FORMAT_LABEL, teamColor, teamMembers, teamName, validateEvent } from '../../model';
 import { formatSecJa } from '../../time';
 
 export function ConfirmStep({ onGoLive, onFix }: { onGoLive: () => void; onFix: (s: SetupStep) => void }) {
@@ -62,6 +62,7 @@ export function ConfirmStep({ onGoLive, onFix }: { onGoLive: () => void; onFix: 
               {ev.format === 'teams' ? (
                 (['A', 'B'] as TeamId[]).map((tid) => (
                   <div key={tid} className="confirm-team">
+                    <span className="team-dot" style={{ background: teamColor(m, tid) }} aria-hidden />
                     <strong>{teamName(m, tid) || <span className="error-text">チーム名未入力</span>}</strong>：
                     {teamMembers(m, tid).map((b) => b.name).join('、') || <span className="muted">メンバーなし</span>}
                   </div>

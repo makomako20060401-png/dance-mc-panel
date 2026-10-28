@@ -34,6 +34,35 @@ export const DEFAULT_TIMERS: TimerSettings = {
   matchWarnSec: 60,
 };
 
+/** チーム色の候補。白背景でも名前の文字が読める濃さにしている */
+export const TEAM_COLORS: { value: string; label: string }[] = [
+  { value: '#2563eb', label: '青' },
+  { value: '#e11d48', label: '赤' },
+  { value: '#16a34a', label: '緑' },
+  { value: '#ea580c', label: 'オレンジ' },
+  { value: '#7c3aed', label: '紫' },
+  { value: '#db2777', label: 'ピンク' },
+  { value: '#0d9488', label: '青緑' },
+  { value: '#ca8a04', label: '黄' },
+  { value: '#1f2937', label: '黒' },
+  { value: '#64748b', label: 'グレー' },
+];
+
+export const DEFAULT_TEAM_COLOR: Record<TeamId, string> = { A: '#2563eb', B: '#e11d48' };
+
+/** 色の上に載せる文字色（白か黒の読みやすい方） */
+export function inkOn(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return '#fff';
+  const n = parseInt(m[1], 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return lum > 0.35 ? '#111' : '#fff';
+}
+
 export function newBattler(name = '', teamId?: TeamId): Battler {
   return teamId ? { id: newId(), name, teamId } : { id: newId(), name };
 }
@@ -44,8 +73,8 @@ export function newMatch(format: BattleFormat | null): Match {
     label: '',
     battlers: format === 'oneVsOne' ? [newBattler(), newBattler()] : [],
     teams: [
-      { id: 'A', name: '' },
-      { id: 'B', name: '' },
+      { id: 'A', name: '', color: DEFAULT_TEAM_COLOR.A },
+      { id: 'B', name: '', color: DEFAULT_TEAM_COLOR.B },
     ],
     performances: [],
     currentBattlerId: null,
@@ -98,6 +127,25 @@ export function teamMembers(match: Match, teamId: TeamId): Battler[] {
 
 export function teamName(match: Match, teamId: TeamId): string {
   return match.teams.find((t) => t.id === teamId)?.name ?? '';
+}
+
+export function teamColor(match: Match, teamId: TeamId): string {
+  return match.teams.find((t) => t.id === teamId)?.color ?? DEFAULT_TEAM_COLOR[teamId];
+}
+
+/**
+ * チームの上下（A/B）を入れ替える。名前・色・メンバーをまとめて入れ替えるので、
+ * 踊った印やタイマーはそのまま残る。
+ */
+export function swapTeams(match: Match): void {
+  const a = match.teams.find((t) => t.id === 'A');
+  const b = match.teams.find((t) => t.id === 'B');
+  if (!a || !b) return;
+  [a.name, b.name] = [b.name, a.name];
+  [a.color, b.color] = [b.color, a.color];
+  for (const bt of match.battlers) {
+    if (bt.teamId) bt.teamId = bt.teamId === 'A' ? 'B' : 'A';
+  }
 }
 
 /** ナビゲーション用の対戦カード表記 */

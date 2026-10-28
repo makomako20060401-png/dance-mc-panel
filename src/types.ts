@@ -13,6 +13,8 @@ export interface Battler {
 export interface Team {
   id: TeamId;
   name: string;
+  /** チームの色（#rrggbb） */
+  color: string;
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   resetMatchProgress,
   selectBattler,
   snapshotForUndo,
+  swapTeams,
   undoSelect,
   unmarkBattler,
 } from '../../model';
@@ -214,6 +215,18 @@ export function LiveScreen() {
               ◎ バトル形式を変更
             </button>
             <p className="menu-section">この試合</p>
+            {ev.format === 'teams' && (
+              <button
+                className="btn btn-block btn-lg"
+                onClick={() => {
+                  setMenuOpen(false);
+                  updateMatch(swapTeams);
+                  toast('チームの上下を入れ替えました');
+                }}
+              >
+                ⇅ チームの上下を入れ替え
+              </button>
+            )}
             <button
               className="btn btn-block btn-lg btn-danger-outline"
               onClick={async () => {

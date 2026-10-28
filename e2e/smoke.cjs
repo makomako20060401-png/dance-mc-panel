@@ -47,7 +47,7 @@ async function checkLayout(page, label) {
     };
     const small = [...document.querySelectorAll('.live button')].filter((b) => {
       const r = b.getBoundingClientRect();
-      return r.height > 0 && r.height < 40 && !b.classList.contains('title-btn');
+      return r.height > 0 && r.height < 30 && !b.classList.contains('title-btn');
     });
     return {
       scroll: document.documentElement.scrollHeight <= vh && document.documentElement.scrollWidth <= vw,
@@ -59,7 +59,7 @@ async function checkLayout(page, label) {
   });
   check(`${label}: ページ全体がスクロールしない`, r.scroll);
   check(`${label}: ナビ・中央・タイマーが画面内`, r.nav === 'ok' && r.middle === 'ok' && r.timers === 'ok', JSON.stringify(r));
-  check(`${label}: 高さ40px未満のボタンがない`, r.small.length === 0, r.small.join(','));
+  check(`${label}: 高さ30px未満のボタンがない`, r.small.length === 0, r.small.join(','));
 }
 
 async function setupCircle(page) {

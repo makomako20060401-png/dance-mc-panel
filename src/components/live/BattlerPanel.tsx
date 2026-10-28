@@ -1,5 +1,5 @@
 import type { BattleFormat, Battler, Match, TeamId } from '../../types';
-import { isDanced, nextTeam, teamMembers, teamName } from '../../model';
+import { inkOn, isDanced, nextTeam, teamColor, teamMembers, teamName } from '../../model';
 import { useLongPress } from '../../hooks/useLongPress';
 import { useDialogs } from '../common/Dialogs';
 
@@ -46,11 +46,15 @@ export function BattlerPanel({ match, format, onSelect, onUnmark, onAdd }: Props
           const members = teamMembers(match, tid);
           const done = members.filter((b) => isDanced(match, b.id)).length;
           return (
-            <div key={tid} className={`team-section team-${tid}${next === tid ? ' is-next' : ''}`}>
+            <div
+              key={tid}
+              className={`team-section team-${tid}${next === tid ? ' is-next' : ''}`}
+              style={{ '--team': teamColor(match, tid), '--team-ink': inkOn(teamColor(match, tid)) } as React.CSSProperties}
+            >
               <h3 className="team-heading">
                 <span className="team-tag">{tid}</span>
                 <span className="team-heading-name">{teamName(match, tid) || `チーム${tid}`}</span>
-                {next === tid && <span className="next-badge">次 NEXT</span>}
+                {next === tid && <span className="next-badge">NEXT</span>}
                 <span className="count-chip">
                   {done}/{members.length}
                 </span>
