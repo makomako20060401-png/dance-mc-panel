@@ -277,6 +277,45 @@ export function removeMatch(ev: BattleEvent, matchId: string): void {
   }
 }
 
+/**
+ * 1 vs 1 の対戦カードをまとめて読み取る。1行1試合。
+ * 区切りは「vs」（大文字・全角も可）、タブ（Excelの2列）、カンマ・読点。
+ * 読み取れなかった行は errors に行番号付きで返す。
+ */
+export function parseMatchups(text: string): { pairs: [string, string][]; errors: string[] } {
+  const pairs: [string, string][] = [];
+  const errors: string[] = [];
+  text.split(/\r?\n/).forEach((line, i) => {
+    if (!line.trim()) return;
+    const parts = line
+      .split(/\s+(?:vs\.?|v\.s\.|ｖｓ|VS|Vs)\s+|\t|,|、|，/i)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    if (parts.length === 2) pairs.push([parts[0], parts[1]]);
+    else errors.push(`${i + 1}行目「${line.trim()}」は2人に分けられませんでした`);
+  });
+  return { pairs, errors };
+}
+
+/** 読み取った対戦カードを、名前が空の試合から順に埋め、足りなければ試合を追加する */
+export function applyMatchups(ev: BattleEvent, pairs: [string, string][]): void {
+  const queue = [...pairs];
+  for (const m of ev.matches) {
+    if (!queue.length) break;
+    if (m.battlers.length === 2 && m.battlers.every((b) => !b.name.trim())) {
+      const [a, b] = queue.shift()!;
+      m.battlers[0].name = a;
+      m.battlers[1].name = b;
+    }
+  }
+  for (const [a, b] of queue) {
+    const m = newMatch('oneVsOne');
+    m.battlers[0].name = a;
+    m.battlers[1].name = b;
+    ev.matches.push(m);
+  }
+}
+
 /** 出演者・設定・原稿を引き継いだ新しいイベントを作る（進行状況はリセット） */
 export function duplicateEvent(src: BattleEvent, now = Date.now()): BattleEvent {
   const copy: BattleEvent = JSON.parse(JSON.stringify(src));

@@ -4,6 +4,8 @@ import { App } from './App';
 import { StoreProvider } from './store';
 import { DialogProvider } from './components/common/Dialogs';
 import './styles.css';
+// Service Worker の登録（オフライン対応）。読み込むだけで登録が始まる
+import './offline';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,10 +16,3 @@ createRoot(document.getElementById('root')!).render(
     </StoreProvider>
   </StrictMode>,
 );
-
-// 本番ビルドのみ Service Worker を登録し、オフラインでも起動できるようにする
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}

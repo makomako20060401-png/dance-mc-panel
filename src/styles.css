@@ -339,6 +339,24 @@ button:disabled {
   margin: 8px 0 4px;
   font-size: 1.6rem;
 }
+.offline-status {
+  display: inline-block;
+  margin: 8px 0 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.offline-status.is-ready {
+  border-color: var(--live);
+  color: var(--live);
+}
+.offline-status.is-unavailable {
+  border-color: var(--warn);
+  color: var(--warn);
+}
 .logo {
   font-size: 3rem;
 }
@@ -1372,6 +1390,77 @@ button:disabled {
   font-size: 0.8rem;
   font-weight: 800;
   color: var(--muted);
+}
+
+.bulk[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bulk-summary {
+  font-weight: 800;
+  cursor: pointer;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.bulk p {
+  margin: 0;
+}
+.bulk-text {
+  min-height: 140px;
+}
+.ok-text {
+  color: var(--live);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* ---------------------------------------------------------------- 端末間の受け渡し */
+
+.transfer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.transfer-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 600;
+}
+.transfer-code {
+  min-height: 88px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+  resize: vertical;
+}
+.transfer-qr-block {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* 読み取りやすいよう白地に黒（ダークテーマでも反転しない） */
+.transfer-qr {
+  width: min(280px, 100%);
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  line-height: 0;
+}
+.transfer-qr svg {
+  width: 100%;
+  height: auto;
+}
+.send-hint {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 /* ---------------------------------------------------------------- モーダル・トースト */

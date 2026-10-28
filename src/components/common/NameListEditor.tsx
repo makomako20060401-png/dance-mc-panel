@@ -13,6 +13,14 @@ interface Props {
 }
 
 /** 名前を1人ずつ追加し、編集・削除・並べ替えができる一覧 */
+/** 貼り付けられた複数行（Excel・スプレッドシートの列など）を名前の一覧にする */
+export function splitNames(text: string): string[] {
+  return text
+    .split(/[\r\n\t]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export function NameListEditor({ battlers, onAdd, onRename, onRemove, onMove, placeholder, addLabel = '追加' }: Props) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +53,14 @@ export function NameListEditor({ battlers, onAdd, onRename, onRemove, onMove, pl
             setValue(e.target.value);
             setError(null);
           }}
+          onPaste={(e) => {
+            const names = splitNames(e.clipboardData.getData('text'));
+            if (names.length < 2) return;
+            e.preventDefault();
+            names.forEach(onAdd);
+            setValue('');
+            setError(null);
+          }}
           onKeyDown={(e) => {
             // 日本語変換確定の Enter では追加しない
             if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
@@ -58,6 +74,7 @@ export function NameListEditor({ battlers, onAdd, onRename, onRemove, onMove, pl
         </button>
       </div>
       {error && <p className="error-text">{error}</p>}
+      <p className="muted tiny">複数行の名前（Excelの列など）を貼り付けると、まとめて追加されます</p>
       {battlers.length === 0 ? (
         <p className="muted small">まだ登録されていません</p>
       ) : (

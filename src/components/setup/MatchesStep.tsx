@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useActiveEvent } from '../../store';
 import type { BattleEvent, Match, TeamId } from '../../types';
 import {
+  applyMatchups,
   matchCard,
   matchHasData,
   moveBattler,
   moveItem,
   newBattler,
   newMatch,
+  parseMatchups,
   removeBattler,
   removeMatch,
   teamMembers,
@@ -43,6 +46,8 @@ export function MatchesStep() {
             ? '各試合の対戦する2名を入力します。'
             : 'バトラー名を入力し、Enter または「追加」で一覧に加えます。'}
       </p>
+
+      {ev.format === 'oneVsOne' && <BulkMatchups />}
 
       {ev.matches.map((m, i) => (
         <MatchCard
@@ -220,5 +225,53 @@ function TeamsEditor({ match, onUpdate }: { match: Match; onUpdate: (r: MatchRec
         );
       })}
     </div>
+  );
+}
+
+/** パソコン向け: 対戦カードを1行1試合でまとめて入力 */
+function BulkMatchups() {
+  const [, updateEvent] = useActiveEvent();
+  const [text, setText] = useState('');
+  const [errors, setErrors] = useState<string[]>([]);
+  const [done, setDone] = useState<string | null>(null);
+
+  const apply = () => {
+    const { pairs, errors } = parseMatchups(text);
+    setErrors(errors);
+    if (!pairs.length) {
+      setDone(null);
+      if (!errors.length) setErrors(['対戦カードを入力してください']);
+      return;
+    }
+    updateEvent((d) => applyMatchups(d, pairs));
+    setDone(`${pairs.length}試合分を入力しました`);
+    setText(errors.length ? text : '');
+  };
+
+  return (
+    <details className="card bulk">
+      <summary className="bulk-summary">📋 対戦カードをまとめて入力（パソコン向け）</summary>
+      <p className="muted small">
+        1行に1試合。「KAZANE vs Taisuke」のように vs で区切るか、Excel・スプレッドシートの2列をそのまま貼り付けます。名前が空の試合から順に埋まり、足りない分は試合が追加されます。
+      </p>
+      <textarea
+        className="input textarea bulk-text"
+        value={text}
+        placeholder={'KAZANE vs Taisuke\nSHIGEKIX vs Ayumi\nRIKU\tHiro'}
+        onChange={(e) => {
+          setText(e.target.value);
+          setDone(null);
+        }}
+      />
+      <button className="btn btn-primary" onClick={apply}>
+        試合に反映する
+      </button>
+      {done && <p className="ok-text">✓ {done}</p>}
+      {errors.map((e) => (
+        <p key={e} className="error-text">
+          ⚠ {e}
+        </p>
+      ))}
+    </details>
   );
 }

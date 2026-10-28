@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useActiveEvent } from '../../store';
-import type { SetupStep, TeamId } from '../../types';
+import { SendDialog } from '../Transfer';
+import type { BattleEvent, SetupStep, TeamId } from '../../types';
 import { FORMAT_LABEL, teamMembers, teamName, validateEvent } from '../../model';
 import { formatSecJa } from '../../time';
 
@@ -7,6 +9,7 @@ export function ConfirmStep({ onGoLive, onFix }: { onGoLive: () => void; onFix: 
   const [ev] = useActiveEvent();
   const t = ev.timers;
   const { errors, warnings } = validateEvent(ev);
+  const [sending, setSending] = useState<BattleEvent[] | null>(null);
 
   return (
     <div className="step">
@@ -105,6 +108,14 @@ export function ConfirmStep({ onGoLive, onFix }: { onGoLive: () => void; onFix: 
         ▶ 本番画面へ
       </button>
       {errors.length > 0 && !ev.hasGoneLive && <p className="error-text center">上の項目を修正すると本番画面へ進めます</p>}
+
+      <div className="send-hint">
+        <p className="muted small">パソコンで入力した場合は、ここから本番で使うスマホへ送れます。</p>
+        <button className="btn btn-lg btn-block" onClick={() => setSending([ev])}>
+          📲 この内容をスマホへ送る
+        </button>
+      </div>
+      {sending && <SendDialog events={sending} onClose={() => setSending(null)} />}
     </div>
   );
 }

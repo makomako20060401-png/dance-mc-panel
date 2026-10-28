@@ -3,8 +3,10 @@ import { produce } from 'immer';
 import {
   changeFormat,
   currentMatch,
+  applyMatchups,
   duplicateEvent,
   nextTeam,
+  parseMatchups,
   snapshotForUndo,
   undoSelect,
   goToMatch,
@@ -299,5 +301,35 @@ describe('イベント複製', () => {
     expect(copy.currentMatchId).toBe(copy.matches[0].id);
     // 元のイベントは変わらない
     expect(ev.matches[0].performances).toHaveLength(1);
+  });
+});
+
+describe('対戦カードの一括入力', () => {
+  it('vs・タブ・カンマ区切りを読み取り、読めない行は行番号付きで返す', () => {
+    const { pairs, errors } = parseMatchups('KAZANE vs Taisuke\nA VS B\nC\tD\nE、F\n\nひとりだけ');
+    expect(pairs).toEqual([
+      ['KAZANE', 'Taisuke'],
+      ['A', 'B'],
+      ['C', 'D'],
+      ['E', 'F'],
+    ]);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('6行目');
+  });
+
+  it('名前に vs を含む単語は区切らない', () => {
+    expect(parseMatchups('Vsion vs Avs').pairs).toEqual([['Vsion', 'Avs']]);
+  });
+
+  it('空の試合から埋め、足りなければ試合を追加する', () => {
+    let ev = newEvent(0);
+    ev.format = 'oneVsOne';
+    ev.matches = [newMatch('oneVsOne'), newMatch('oneVsOne')];
+    ev.matches[0].battlers[0].name = '既存';
+    ev = produce(ev, (d) => applyMatchups(d, [['A', 'B'], ['C', 'D']]));
+    expect(ev.matches).toHaveLength(3);
+    expect(ev.matches[0].battlers[0].name).toBe('既存');
+    expect(ev.matches[1].battlers.map((b) => b.name)).toEqual(['A', 'B']);
+    expect(ev.matches[2].battlers.map((b) => b.name)).toEqual(['C', 'D']);
   });
 });

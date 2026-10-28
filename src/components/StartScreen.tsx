@@ -1,8 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import type { BattleEvent } from '../types';
 import { useStore } from '../store';
 import { duplicateEvent, FORMAT_LABEL, newEvent } from '../model';
 import { canDownload, downloadEvents, parseImport } from '../storage';
 import { useDialogs } from './common/Dialogs';
+import { ReceiveDialog, SendDialog, useImportEvents } from './Transfer';
+import { useOfflineStatus } from '../offline';
 
 function formatDate(ms: number): string {
   const d = new Date(ms);
@@ -14,6 +17,10 @@ export function StartScreen() {
   const { state, update } = useStore();
   const { confirm, toast } = useDialogs();
   const fileRef = useRef<HTMLInputElement>(null);
+  const importEvents = useImportEvents();
+  const [sending, setSending] = useState<BattleEvent[] | null>(null);
+  const [receiving, setReceiving] = useState(false);
+  const offline = useOfflineStatus();
   const events = [...state.events].sort((a, b) => b.updatedAt - a.updatedAt);
 
   const create = () => {
@@ -26,15 +33,7 @@ export function StartScreen() {
 
   const importFile = async (file: File) => {
     try {
-      const imported = parseImport(await file.text());
-      update((d) => {
-        for (const ev of imported) {
-          // 同じIDがあれば別イベントとして取り込む（上書きしない）
-          const exists = d.events.some((e) => e.id === ev.id);
-          d.events.push(exists ? { ...ev, id: ev.id + '-' + Date.now().toString(36), name: ev.name + '（読込）' } : ev);
-        }
-      });
-      toast(`${imported.length}件のイベントを読み込みました`);
+      await importEvents(parseImport(await file.text()));
     } catch (e) {
       toast(e instanceof Error ? e.message : '読み込みに失敗しました');
     }
@@ -48,6 +47,11 @@ export function StartScreen() {
         </div>
         <h1>ダンスバトル MCパネル</h1>
         <p className="muted">実況・煽り・出演者・時間管理をこの1台で</p>
+        <p className={`offline-status is-${offline}`} role="status">
+          {offline === 'ready' && '✓ オフライン対応済み：電波がなくても起動できます'}
+          {offline === 'preparing' && '… オフライン用のデータを保存中'}
+          {offline === 'unavailable' && '⚠ この開き方ではオフラインで使えません（要インターネット）'}
+        </p>
       </header>
 
       <button className="btn btn-primary btn-xl btn-block" onClick={create}>
@@ -76,6 +80,14 @@ export function StartScreen() {
                     {ev.screen.kind === 'live' && <span className="badge badge-live">本番中</span>}
                   </span>
                   <span className="event-meta">最終更新 {formatDate(ev.updatedAt)}</span>
+                </button>
+                <button
+                  className="icon-btn"
+                  aria-label={`${ev.name}を別の端末へ送る`}
+                  title="別の端末へ送る"
+                  onClick={() => setSending([ev])}
+                >
+                  📲
                 </button>
                 <button
                   className="icon-btn"
@@ -114,6 +126,21 @@ export function StartScreen() {
       </section>
 
       <section className="section">
+        <h2 className="section-title">パソコン ⇄ スマホの受け渡し</h2>
+        <p className="muted small">
+          パソコンで出演者や原稿を入力し、各イベントの「📲」で送ります。スマホではここの「受け取る」に転送コードを貼り付けます。通信は使いません。
+        </p>
+        <div className="row-wrap">
+          <button className="btn btn-primary" onClick={() => setReceiving(true)}>
+            📥 受け取る
+          </button>
+          <button className="btn" disabled={events.length === 0} onClick={() => setSending(state.events)}>
+            📲 すべて送る
+          </button>
+        </div>
+      </section>
+
+      <section className="section">
         <h2 className="section-title">バックアップ</h2>
         <p className="muted small">
           データはこの端末のブラウザ内に自動保存されます。
@@ -147,6 +174,9 @@ export function StartScreen() {
           />
         </div>
       </section>
+
+      {sending && <SendDialog events={sending} onClose={() => setSending(null)} />}
+      {receiving && <ReceiveDialog onClose={() => setReceiving(false)} />}
     </div>
   );
 }
