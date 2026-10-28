@@ -100,11 +100,7 @@ async function setupCircle(page) {
     await btn('Taisuke').click();
     check('前の人は「済」で残る', (await btn('KAZANE').getAttribute('class')).includes('is-danced'));
 
-    await page.getByRole('button', { name: '元に戻す' }).click();
-    check('元に戻すで前の担当者に戻る', (await btn('KAZANE').getAttribute('class')).includes('is-now'));
-    check('取り消した人は未選択に戻る', (await btn('Taisuke').getAttribute('class')).includes('is-idle'));
-
-    await btn('Taisuke').click();
+    check('名前を押しても通知バナーは出ない', (await page.locator('.toast').count()) === 0);
     await btn('KAZANE').click();
     check('踊った人の通常タップでは担当が変わらない', (await btn('Taisuke').getAttribute('class')).includes('is-now'));
 

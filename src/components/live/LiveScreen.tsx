@@ -7,12 +7,9 @@ import {
   isDanced,
   matchCard,
   newBattler,
-  newId,
   resetMatchProgress,
   selectBattler,
-  snapshotForUndo,
   swapTeams,
-  undoSelect,
   unmarkBattler,
 } from '../../model';
 import { isRunning, pauseWatch, startWatch, stoppedWatch } from '../../time';
@@ -64,17 +61,8 @@ export function LiveScreen() {
     else dismissToast();
   };
 
-  /** タップで即開始。誤タップに備えて数秒間だけ「元に戻す」を出す */
-  const select = (battlerId: string) => {
-    const pid = newId();
-    const undo = snapshotForUndo(match, pid);
-    const name = match.battlers.find((b) => b.id === battlerId)?.name ?? '';
-    updateMatch((m) => void selectBattler(m, battlerId, Date.now(), pid));
-    toast(`▶ ${name}`, {
-      label: '元に戻す',
-      onClick: () => updateEvent((d) => void undoSelect(d, undo)),
-    });
-  };
+  /** タップで即開始（確認や通知は出さない） */
+  const select = (battlerId: string) => updateMatch((m) => void selectBattler(m, battlerId, Date.now()));
 
   const current = match.battlers.find((b) => b.id === match.currentBattlerId) ?? null;
   const title = `第${index + 1}試合 / 全${ev.matches.length}試合`;

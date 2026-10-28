@@ -26,7 +26,7 @@ interface ToastAction {
 interface DialogApi {
   confirm: (o: ConfirmOptions) => Promise<boolean>;
   prompt: (o: PromptOptions) => Promise<string | null>;
-  /** action を渡すとボタン付きで少し長く表示する（元に戻す等） */
+  /** action を渡すとボタン付きで少し長く表示する */
   toast: (message: string, action?: ToastAction) => void;
   dismissToast: () => void;
 }

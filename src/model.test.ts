@@ -9,8 +9,6 @@ import {
   duplicateEvent,
   nextTeam,
   parseMatchups,
-  snapshotForUndo,
-  undoSelect,
   goToMatch,
   isDanced,
   moveBattler,
@@ -222,51 +220,6 @@ describe('入力チェック', () => {
     ev.format = 'teams';
     ev.matches = [newMatch('teams')];
     expect(validateEvent(ev).errors.some((e) => e.message.includes('チームA'))).toBe(true);
-  });
-});
-
-describe('誤タップの取り消し', () => {
-  it('直前の担当者とタイマーを途切れなく復元する', () => {
-    let ev = liveEvent();
-    const [a, b] = ev.matches[0].battlers;
-    ev = produce(ev, (d) => void selectBattler(d.matches[0], a.id, 1000));
-    const undo = snapshotForUndo(ev.matches[0], 'p-b');
-    ev = produce(ev, (d) => void selectBattler(d.matches[0], b.id, 20_000, 'p-b'));
-    let ok = false;
-    ev = produce(ev, (d) => void (ok = undoSelect(d, undo)));
-    const m = ev.matches[0];
-    expect(ok).toBe(true);
-    expect(m.currentBattlerId).toBe(a.id);
-    expect(m.personalTimer.runningSince).toBe(1000);
-    expect(isDanced(m, b.id)).toBe(false);
-  });
-
-  it('最初の1人の取り消しでは試合タイマーも開始前に戻る', () => {
-    let ev = liveEvent();
-    const a = ev.matches[0].battlers[0];
-    const undo = snapshotForUndo(ev.matches[0], 'p-a');
-    ev = produce(ev, (d) => void selectBattler(d.matches[0], a.id, 1000, 'p-a'));
-    ev = produce(ev, (d) => void undoSelect(d, undo));
-    expect(isRunning(ev.matches[0].matchTimer)).toBe(false);
-    expect(ev.matches[0].currentBattlerId).toBeNull();
-  });
-
-  it('その後に別の操作や試合切替があれば何もしない', () => {
-    let ev = liveEvent();
-    const [a, b] = ev.matches[0].battlers;
-    const undo = snapshotForUndo(ev.matches[0], 'p-a');
-    ev = produce(ev, (d) => void selectBattler(d.matches[0], a.id, 1000, 'p-a'));
-    ev = produce(ev, (d) => void selectBattler(d.matches[0], b.id, 2000));
-    let ok = true;
-    produce(ev, (d) => void (ok = undoSelect(d, undo)));
-    expect(ok).toBe(false);
-
-    let ev2 = liveEvent();
-    const undo2 = snapshotForUndo(ev2.matches[0], 'p-x');
-    ev2 = produce(ev2, (d) => void selectBattler(d.matches[0], d.matches[0].battlers[0].id, 1000, 'p-x'));
-    ev2 = produce(ev2, (d) => void goToMatch(d, 1, 2000));
-    produce(ev2, (d) => void (ok = undoSelect(d, undo2)));
-    expect(ok).toBe(false);
   });
 });
 
