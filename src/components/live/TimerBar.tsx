@@ -116,6 +116,7 @@ function TimerBlock({
           type="button"
           className={`timer-btn is-reset${reset.pressing ? ' is-pressing' : ''}`}
           aria-label={`${title}タイマーをリセット（長押し）`}
+          aria-keyshortcuts="Delete"
           {...reset.handlers}
         >
           ↺<span className="press-progress" aria-hidden />

@@ -1016,6 +1016,18 @@ button:disabled {
   color: #fff;
   font-size: 0.9rem;
 }
+.next-badge {
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+}
+.team-section.is-next .team-heading {
+  background: var(--panel-3);
+}
 .team-B .team-tag {
   background: var(--team-b);
 }
@@ -1034,6 +1046,30 @@ button:disabled {
 }
 .script-heading .btn {
   min-height: 40px;
+}
+.title-btn {
+  background: none;
+  border: none;
+  font-weight: 800;
+  min-height: 40px;
+}
+.name-chips {
+  margin-top: 8px;
+}
+.name-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.name-chip {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #3c4c6c;
+  background: #172033;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 .editing-label {
   margin-left: auto;
@@ -1403,6 +1439,29 @@ button:disabled {
   animation: toast-in 0.18s ease-out;
   text-align: center;
 }
+.toast.has-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 6px 6px 16px;
+  white-space: nowrap;
+}
+.toast.has-action > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.toast-action {
+  pointer-events: auto;
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: none;
+  background: #141414;
+  color: var(--accent);
+  font-weight: 800;
+}
 
 @keyframes toast-in {
   from {
@@ -1465,10 +1524,23 @@ button:disabled {
   .battler-btn {
     min-height: 50px;
     font-size: 1.1rem;
-    padding: 4px 8px;
+    padding: 12px 8px 4px;
+  }
+  /* 横向きは名前を複数列に並べ、一度に見える人数を増やす */
+  .battler-panel:not(.is-vs) .battler-scroll {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    align-content: start;
+  }
+  .battler-panel:not(.is-vs) .add-battler-btn,
+  .battler-panel:not(.is-vs) .empty-note {
+    grid-column: 1 / -1;
+  }
+  .add-battler-btn {
+    margin-top: 8px;
   }
   .team-heading {
-    min-height: 36px;
+    min-height: 34px;
     padding: 2px 8px;
   }
   .timer-bar {
@@ -1548,12 +1620,40 @@ button:disabled {
 
 /* 縦向きスマホ: 原稿ヘッダーはボタンを優先 */
 @media (max-width: 520px) {
+  .editing-label {
+    display: none;
+  }
   .script-heading .panel-title {
     visibility: hidden;
     min-width: 0;
   }
   .battler-btn {
     font-size: 1.1rem;
+  }
+}
+
+/* 幅360px未満: ヘッダーはアイコンのみ、名前ボタンを詰める */
+@media (max-width: 359px) {
+  .btn-text {
+    display: none;
+  }
+  .script-heading .btn {
+    min-width: 48px;
+    font-size: 1.2rem;
+  }
+  .battler-scroll {
+    padding: 6px;
+  }
+  .battler-btn {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 6px;
+    padding: 14px 6px 6px;
+    font-size: 1rem;
+  }
+  .battler-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
   }
 }
 

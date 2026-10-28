@@ -7,8 +7,11 @@ import {
   isDanced,
   matchCard,
   newBattler,
+  newId,
   resetMatchProgress,
   selectBattler,
+  snapshotForUndo,
+  undoSelect,
   unmarkBattler,
 } from '../../model';
 import { isRunning, pauseWatch, startWatch, stoppedWatch } from '../../time';
@@ -25,7 +28,7 @@ import { ScriptFullscreen } from './ScriptFullscreen';
 export function LiveScreen() {
   const [ev, updateEvent] = useActiveEvent();
   const { update, saveError } = useStore();
-  const { confirm, toast } = useDialogs();
+  const { confirm, toast, dismissToast } = useDialogs();
   const [menuOpen, setMenuOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -57,6 +60,19 @@ export function LiveScreen() {
     const wasRunning = running;
     updateEvent((d) => void goToMatch(d, i, Date.now()));
     if (wasRunning) toast('前の試合のタイマーを一時停止しました');
+    else dismissToast();
+  };
+
+  /** タップで即開始。誤タップに備えて数秒間だけ「元に戻す」を出す */
+  const select = (battlerId: string) => {
+    const pid = newId();
+    const undo = snapshotForUndo(match, pid);
+    const name = match.battlers.find((b) => b.id === battlerId)?.name ?? '';
+    updateMatch((m) => void selectBattler(m, battlerId, Date.now(), pid));
+    toast(`▶ ${name}`, {
+      label: '元に戻す',
+      onClick: () => updateEvent((d) => void undoSelect(d, undo)),
+    });
   };
 
   const current = match.battlers.find((b) => b.id === match.currentBattlerId) ?? null;
@@ -88,7 +104,7 @@ export function LiveScreen() {
         <BattlerPanel
           match={match}
           format={ev.format}
-          onSelect={(id) => updateMatch((m) => void selectBattler(m, id, Date.now()))}
+          onSelect={select}
           onUnmark={(id) => {
             const name = match.battlers.find((b) => b.id === id)?.name ?? '';
             updateMatch((m) => unmarkBattler(m, id, Date.now()));

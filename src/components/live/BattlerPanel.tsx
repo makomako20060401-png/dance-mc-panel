@@ -1,5 +1,5 @@
 import type { BattleFormat, Battler, Match, TeamId } from '../../types';
-import { isDanced, teamMembers, teamName } from '../../model';
+import { isDanced, nextTeam, teamMembers, teamName } from '../../model';
 import { useLongPress } from '../../hooks/useLongPress';
 import { useDialogs } from '../common/Dialogs';
 
@@ -39,16 +39,18 @@ export function BattlerPanel({ match, format, onSelect, onUnmark, onAdd }: Props
   const doneCount = match.battlers.filter((b) => isDanced(match, b.id)).length;
 
   if (format === 'teams') {
+    const next = nextTeam(match);
     return (
       <section className="panel battler-panel teams" aria-label="バトラー一覧">
         {(['A', 'B'] as TeamId[]).map((tid) => {
           const members = teamMembers(match, tid);
           const done = members.filter((b) => isDanced(match, b.id)).length;
           return (
-            <div key={tid} className={`team-section team-${tid}`}>
+            <div key={tid} className={`team-section team-${tid}${next === tid ? ' is-next' : ''}`}>
               <h3 className="team-heading">
                 <span className="team-tag">{tid}</span>
                 <span className="team-heading-name">{teamName(match, tid) || `チーム${tid}`}</span>
+                {next === tid && <span className="next-badge">次 NEXT</span>}
                 <span className="count-chip">
                   {done}/{members.length}
                 </span>
@@ -121,6 +123,7 @@ function BattlerButton({
       className={`battler-btn is-${state}${pressing ? ' is-pressing' : ''}`}
       aria-label={`${battler.name || '名前未入力'}${state === 'now' ? '（パフォーマンス中）' : state === 'danced' ? '（踊った）' : ''}`}
       aria-pressed={state !== 'idle'}
+      aria-keyshortcuts={state === 'idle' ? undefined : 'Delete'}
       {...handlers}
     >
       <span className="battler-icon" aria-hidden>

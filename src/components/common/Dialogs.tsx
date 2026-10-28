@@ -18,10 +18,17 @@ interface PromptOptions {
   validate?: (value: string) => string | null;
 }
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface DialogApi {
   confirm: (o: ConfirmOptions) => Promise<boolean>;
   prompt: (o: PromptOptions) => Promise<string | null>;
-  toast: (message: string) => void;
+  /** action を渡すとボタン付きで少し長く表示する（元に戻す等） */
+  toast: (message: string, action?: ToastAction) => void;
+  dismissToast: () => void;
 }
 
 type Pending =
@@ -32,7 +39,7 @@ const Ctx = createContext<DialogApi | null>(null);
 
 export function DialogProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<Pending | null>(null);
-  const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ text: string; key: number; action?: ToastAction } | null>(null);
 
   const confirm = useCallback(
     (opts: ConfirmOptions) => new Promise<boolean>((resolve) => setPending({ kind: 'confirm', opts, resolve })),
@@ -42,18 +49,22 @@ export function DialogProvider({ children }: { children: ReactNode }) {
     (opts: PromptOptions) => new Promise<string | null>((resolve) => setPending({ kind: 'prompt', opts, resolve })),
     [],
   );
-  const toast = useCallback((text: string) => setToastMsg({ text, key: Date.now() }), []);
+  const toast = useCallback(
+    (text: string, action?: ToastAction) => setToastMsg({ text, key: Date.now(), action }),
+    [],
+  );
+  const dismissToast = useCallback(() => setToastMsg(null), []);
 
   useEffect(() => {
     if (!toastMsg) return;
-    const id = window.setTimeout(() => setToastMsg(null), 2200);
+    const id = window.setTimeout(() => setToastMsg(null), toastMsg.action ? 5000 : 2200);
     return () => window.clearTimeout(id);
   }, [toastMsg]);
 
   const close = () => setPending(null);
 
   return (
-    <Ctx.Provider value={{ confirm, prompt, toast }}>
+    <Ctx.Provider value={{ confirm, prompt, toast, dismissToast }}>
       {children}
       {pending?.kind === 'confirm' && (
         <ConfirmDialog
@@ -74,8 +85,20 @@ export function DialogProvider({ children }: { children: ReactNode }) {
         />
       )}
       {toastMsg && (
-        <div className="toast" role="status" key={toastMsg.key}>
-          {toastMsg.text}
+        <div className={`toast${toastMsg.action ? ' has-action' : ''}`} role="status" key={toastMsg.key}>
+          <span>{toastMsg.text}</span>
+          {toastMsg.action && (
+            <button
+              type="button"
+              className="toast-action"
+              onClick={() => {
+                toastMsg.action?.onClick();
+                setToastMsg(null);
+              }}
+            >
+              {toastMsg.action.label}
+            </button>
+          )}
         </div>
       )}
     </Ctx.Provider>

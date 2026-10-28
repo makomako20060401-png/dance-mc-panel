@@ -134,15 +134,63 @@ export type SelectResult = 'started' | 'alreadyDanced' | 'notFound';
  * バトラーをタップしたときの処理。
  * 担当者にする・踊った印を付ける・個人タイマーを初期値から開始、を同時に行う。
  */
-export function selectBattler(match: Match, battlerId: string, now: number): SelectResult {
+export function selectBattler(match: Match, battlerId: string, now: number, performanceId = newId()): SelectResult {
   if (!match.battlers.some((b) => b.id === battlerId)) return 'notFound';
   if (isDanced(match, battlerId)) return 'alreadyDanced';
-  match.performances.push({ id: newId(), battlerId, startedAt: now });
+  match.performances.push({ id: performanceId, battlerId, startedAt: now });
   match.currentBattlerId = battlerId;
   match.personalTimer = restartWatch(now);
   // 試合が始まっていなければ、最初のパフォーマンスと同時に試合経過も開始
   match.matchTimer = startWatch(match.matchTimer, now);
   return 'started';
+}
+
+/** 選択を取り消すために、選択直前の状態を控えておく */
+export interface SelectUndo {
+  matchId: string;
+  performanceId: string;
+  prev: Pick<Match, 'currentBattlerId' | 'personalTimer' | 'matchTimer'>;
+}
+
+export function snapshotForUndo(match: Match, performanceId: string): SelectUndo {
+  return {
+    matchId: match.id,
+    performanceId,
+    prev: {
+      currentBattlerId: match.currentBattlerId,
+      personalTimer: { ...match.personalTimer },
+      matchTimer: { ...match.matchTimer },
+    },
+  };
+}
+
+/**
+ * 誤タップの取り消し。直前の担当者とタイマーをそのまま復元する
+ * （前の人のタイマーは途切れずに進んでいた扱い）。
+ * その後に別の操作や試合切替があった場合は何もしない。
+ */
+export function undoSelect(ev: BattleEvent, undo: SelectUndo): boolean {
+  if (currentMatch(ev)?.id !== undo.matchId) return false;
+  const m = ev.matches.find((x) => x.id === undo.matchId);
+  const last = m?.performances[m.performances.length - 1];
+  if (!m || !last || last.id !== undo.performanceId || last.voidedAt != null) return false;
+  if (m.currentBattlerId !== last.battlerId) return false;
+  m.performances.pop();
+  m.currentBattlerId = undo.prev.currentBattlerId;
+  m.personalTimer = undo.prev.personalTimer;
+  m.matchTimer = undo.prev.matchTimer;
+  return true;
+}
+
+/** チーム形式で、直前に踊ったチームの相手側（次に踊る側の目安）を返す */
+export function nextTeam(match: Match): TeamId | null {
+  for (let i = match.performances.length - 1; i >= 0; i--) {
+    const p = match.performances[i];
+    if (p.voidedAt != null) continue;
+    const team = match.battlers.find((b) => b.id === p.battlerId)?.teamId;
+    if (team) return team === 'A' ? 'B' : 'A';
+  }
+  return null;
 }
 
 /** 長押しで踊った印を解除。現在の担当者ならタイマーを初期状態へ戻す */
@@ -227,6 +275,24 @@ export function removeMatch(ev: BattleEvent, matchId: string): void {
   if (ev.currentMatchId === matchId) {
     ev.currentMatchId = ev.matches[Math.min(idx, ev.matches.length - 1)].id;
   }
+}
+
+/** 出演者・設定・原稿を引き継いだ新しいイベントを作る（進行状況はリセット） */
+export function duplicateEvent(src: BattleEvent, now = Date.now()): BattleEvent {
+  const copy: BattleEvent = JSON.parse(JSON.stringify(src));
+  copy.id = newId();
+  copy.name = `${src.name}（コピー）`;
+  copy.matches.forEach((m) => {
+    m.id = newId();
+    m.draft = null;
+    resetMatchProgress(m);
+  });
+  copy.currentMatchId = copy.matches[0]?.id ?? null;
+  copy.screen = { kind: 'setup', step: copy.format ? 'confirm' : 'format' };
+  copy.hasGoneLive = false;
+  copy.createdAt = now;
+  copy.updatedAt = now;
+  return copy;
 }
 
 /** 形式変更で失われるデータがあるか */

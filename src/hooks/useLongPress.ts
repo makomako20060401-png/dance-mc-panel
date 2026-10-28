@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
 
 export const LONG_PRESS_MS = 600;
 const MOVE_TOLERANCE_PX = 12;
@@ -14,6 +14,7 @@ interface Options {
  * - 指が動いた（スクロール）・離れた・ブラウザがキャンセルした場合は長押しにしない
  * - 長押し成立後に続けて発生する click は無視する（解除直後の誤選択を防ぐ）
  * - pressing は押下中の進捗表示に使う
+ * - キーボード操作では Delete / Backspace を長押しの代わりにする
  */
 export function useLongPress({ onLongPress, onClick, ms = LONG_PRESS_MS }: Options) {
   const [pressing, setPressing] = useState(false);
@@ -78,6 +79,12 @@ export function useLongPress({ onLongPress, onClick, ms = LONG_PRESS_MS }: Optio
       onPointerCancel: cancel,
       onClick: onClickHandler,
       onContextMenu: (e: MouseEvent) => e.preventDefault(),
+      onKeyDown: (e: KeyboardEvent) => {
+        if ((e.key === 'Delete' || e.key === 'Backspace') && cbs.current.onLongPress) {
+          e.preventDefault();
+          cbs.current.onLongPress();
+        }
+      },
     },
   };
 }

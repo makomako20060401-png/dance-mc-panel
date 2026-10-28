@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useStore } from '../store';
-import { FORMAT_LABEL, newEvent } from '../model';
+import { duplicateEvent, FORMAT_LABEL, newEvent } from '../model';
 import { downloadEvents, parseImport } from '../storage';
 import { useDialogs } from './common/Dialogs';
 
@@ -76,6 +76,18 @@ export function StartScreen() {
                     {ev.screen.kind === 'live' && <span className="badge badge-live">本番中</span>}
                   </span>
                   <span className="event-meta">最終更新 {formatDate(ev.updatedAt)}</span>
+                </button>
+                <button
+                  className="icon-btn"
+                  aria-label={`${ev.name}を複製`}
+                  title="複製（出演者・設定・原稿を引き継ぎ、進行状況はリセット）"
+                  onClick={() => {
+                    const copy = duplicateEvent(ev);
+                    update((d) => void d.events.push(copy));
+                    toast(`「${copy.name}」を作成しました`);
+                  }}
+                >
+                  ⧉
                 </button>
                 <button
                   className="icon-btn icon-btn-danger"
