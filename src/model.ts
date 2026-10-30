@@ -198,6 +198,22 @@ export function selectBattler(match: Match, battlerId: string, now: number): Sel
   return 'started';
 }
 
+/**
+ * 個人タイマーの ▶ / ❚❚。
+ * 0 の状態（リセット直後など）から ▶ を押した場合は「誰の時間でもない手動計測」として始め、
+ * 前の人の NOW を外す（踊った印は残る）。こうしておくと、数人で踊り始めて1人が残るパターンで
+ * 残った人の名前を押したときに、タイマーを初め直さずに引き継げる（selectBattler 参照）。
+ * 途中で止めた時間からの再開は、これまで通り担当者を変えない。
+ */
+export function togglePersonalTimer(match: Match, now: number): void {
+  if (isRunning(match.personalTimer)) {
+    match.personalTimer = pauseWatch(match.personalTimer, now);
+    return;
+  }
+  if (match.personalTimer.accumulatedMs === 0) match.currentBattlerId = null;
+  match.personalTimer = startWatch(match.personalTimer, now);
+}
+
 /** チーム形式で、直前に踊ったチームの相手側（次に踊る側の目安）を返す */
 export function nextTeam(match: Match): TeamId | null {
   for (let i = match.performances.length - 1; i >= 0; i--) {

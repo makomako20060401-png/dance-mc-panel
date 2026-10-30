@@ -11,9 +11,11 @@ interface Props {
   onNext: () => void;
   onOpenList: () => void;
   onOpenMenu: () => void;
+  /** 新しい版がある場合にメニューへ印を付ける */
+  hasUpdate?: boolean;
 }
 
-export function MatchNav({ index, total, match, format, onPrev, onNext, onOpenList, onOpenMenu }: Props) {
+export function MatchNav({ index, total, match, format, onPrev, onNext, onOpenList, onOpenMenu, hasUpdate }: Props) {
   const swipe = useSwipe(onNext, onPrev);
   return (
     <header className="match-nav" {...swipe}>
@@ -32,6 +34,7 @@ export function MatchNav({ index, total, match, format, onPrev, onNext, onOpenLi
       </button>
       <button type="button" className="nav-menu" onClick={onOpenMenu} aria-label="メニュー（設定・編集）">
         ☰<span className="nav-menu-text">設定</span>
+        {hasUpdate && <span className="update-dot" aria-label="新しい版があります" />}
       </button>
     </header>
   );

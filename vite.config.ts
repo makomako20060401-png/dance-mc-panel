@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -26,8 +27,20 @@ function serviceWorker(): Plugin {
   };
 }
 
+/** 画面に出すバージョン（ビルド日 + コミット）。どの版が入っているか確認できるようにする */
+function appVersion(): string {
+  const d = new Date();
+  const date = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+  try {
+    return `${date} (${execSync('git rev-parse --short HEAD').toString().trim()})`;
+  } catch {
+    return date;
+  }
+}
+
 // 相対パスでビルドし、任意のサブディレクトリや静的ホスティングに置けるようにする
 export default defineConfig({
   base: './',
+  define: { __APP_VERSION__: JSON.stringify(appVersion()) },
   plugins: [react(), serviceWorker()],
 });

@@ -6,6 +6,7 @@ import {
   applyMatchups,
   inkOn,
   swapTeams,
+  togglePersonalTimer,
   duplicateEvent,
   nextTeam,
   parseMatchups,
@@ -22,7 +23,7 @@ import {
   validateEvent,
   validateSettings,
 } from './model';
-import { elapsedMs, isRunning, startWatch, timerView } from './time';
+import { elapsedMs, isRunning, startWatch, stoppedWatch, timerView } from './time';
 import type { BattleEvent, Match } from './types';
 
 function circleMatch(...names: string[]): Match {
@@ -74,6 +75,31 @@ describe('バトラー選択', () => {
     // 次の人に切り替えたときは、これまで通り初期値から
     m = produce(m, (d) => void selectBattler(d, b.id, 60_000));
     expect(m.personalTimer).toEqual({ runningSince: 60_000, accumulatedMs: 0 });
+  });
+
+  it('前の人の後にリセット→▶ で手動開始すると NOW が外れ、次の人の名前で引き継げる', () => {
+    let m = circleMatch('A', 'B');
+    const [a, b] = m.battlers;
+    m = produce(m, (d) => void selectBattler(d, a.id, 1000));
+    // A の時間が終わり、リセット（長押し↺）してから、みんなで踊り始めたところで ▶
+    m = produce(m, (d) => void (d.personalTimer = stoppedWatch()));
+    m = produce(m, (d) => togglePersonalTimer(d, 70_000));
+    expect(m.currentBattlerId).toBeNull();
+    expect(isDanced(m, a.id)).toBe(true);
+    // B が残ったので B の名前を押す → タイマーはそのまま
+    m = produce(m, (d) => void selectBattler(d, b.id, 82_000));
+    expect(m.currentBattlerId).toBe(b.id);
+    expect(m.personalTimer.runningSince).toBe(70_000);
+  });
+
+  it('途中で止めた時間からの再開では担当者は変わらない', () => {
+    let m = circleMatch('A');
+    const a = m.battlers[0];
+    m = produce(m, (d) => void selectBattler(d, a.id, 1000));
+    m = produce(m, (d) => togglePersonalTimer(d, 5000));
+    m = produce(m, (d) => togglePersonalTimer(d, 9000));
+    expect(m.currentBattlerId).toBe(a.id);
+    expect(elapsedMs(m.personalTimer, 10_000)).toBe(5000);
   });
 
   it('手動で開始して一時停止中なら、名前を押すと初期値から開始する', () => {

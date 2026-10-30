@@ -40,7 +40,9 @@ export function TimerBar(p: Props) {
       <TimerBlock
         kind="personal"
         title="個人"
-        subject={p.current ? p.current.name : '担当者なし'}
+        subject={
+          p.current ? p.current.name : isRunning(p.personal) || p.personal.accumulatedMs > 0 ? '手動計測中' : '担当者なし'
+        }
         view={pv}
         status={personalStatus}
         running={isRunning(p.personal)}

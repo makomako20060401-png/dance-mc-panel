@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BattleEvent } from '../types';
 import { useStore } from '../store';
 import { duplicateEvent, FORMAT_LABEL, newEvent } from '../model';
 import { canDownload, downloadEvents, parseImport } from '../storage';
 import { useDialogs } from './common/Dialogs';
 import { ReceiveDialog, SendDialog, useImportEvents } from './Transfer';
-import { useOfflineStatus } from '../offline';
+import { APP_VERSION, applyUpdate, useOfflineStatus, useUpdateReady } from '../offline';
 
 function formatDate(ms: number): string {
   const d = new Date(ms);
@@ -21,6 +21,12 @@ export function StartScreen() {
   const [sending, setSending] = useState<BattleEvent[] | null>(null);
   const [receiving, setReceiving] = useState(false);
   const offline = useOfflineStatus();
+  const updateReady = useUpdateReady();
+
+  // 最初の画面では本番中の操作がないので、新しい版が来たらすぐ切り替える
+  useEffect(() => {
+    if (updateReady) applyUpdate();
+  }, [updateReady]);
   const events = [...state.events].sort((a, b) => b.updatedAt - a.updatedAt);
 
   const create = () => {
@@ -174,6 +180,8 @@ export function StartScreen() {
           />
         </div>
       </section>
+
+      <p className="app-version">バージョン {APP_VERSION}</p>
 
       {sending && <SendDialog events={sending} onClose={() => setSending(null)} />}
       {receiving && <ReceiveDialog onClose={() => setReceiving(false)} />}

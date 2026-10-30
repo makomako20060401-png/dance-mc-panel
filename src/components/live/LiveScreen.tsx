@@ -10,11 +10,13 @@ import {
   resetMatchProgress,
   selectBattler,
   swapTeams,
+  togglePersonalTimer,
   unmarkBattler,
 } from '../../model';
 import { isRunning, pauseWatch, startWatch, stoppedWatch } from '../../time';
 import { canDownload, downloadEvents } from '../../storage';
 import { useNow } from '../../hooks/useNow';
+import { applyUpdate, useUpdateReady } from '../../offline';
 import { useWakeLock } from '../../hooks/useWakeLock';
 import { Modal, useDialogs } from '../common/Dialogs';
 import { MatchNav } from './MatchNav';
@@ -30,6 +32,7 @@ export function LiveScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const updateReady = useUpdateReady();
 
   const index = currentMatchIndex(ev);
   const match = ev.matches[index];
@@ -85,6 +88,7 @@ export function LiveScreen() {
         onNext={() => go(index + 1)}
         onOpenList={() => setListOpen(true)}
         onOpenMenu={() => setMenuOpen(true)}
+        hasUpdate={updateReady}
       />
 
       {saveError && <div className="save-error">⚠ 端末への保存に失敗しています（空き容量を確認してください）</div>}
@@ -192,6 +196,11 @@ export function LiveScreen() {
       {menuOpen && (
         <Modal title="メニュー" onClose={() => setMenuOpen(false)}>
           <div className="menu-list">
+            {updateReady && (
+              <button className="btn btn-block btn-lg btn-primary" onClick={applyUpdate}>
+                ⬆ 新しい版に更新する（入力内容はそのまま）
+              </button>
+            )}
             <p className="menu-section">編集（タイマーは止まりません）</p>
             <button className="btn btn-block btn-lg" onClick={() => openSetup('matches')}>
               👥 出演者・試合を編集
@@ -260,8 +269,7 @@ export function LiveScreen() {
 }
 
 function togglePersonal(m: Match) {
-  const t = Date.now();
-  m.personalTimer = isRunning(m.personalTimer) ? pauseWatch(m.personalTimer, t) : startWatch(m.personalTimer, t);
+  togglePersonalTimer(m, Date.now());
 }
 
 /** 警戒時間・時間切れに入った瞬間だけバイブレーションする */
