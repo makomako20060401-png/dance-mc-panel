@@ -7,7 +7,7 @@ import type {
   TeamId,
   TimerSettings,
 } from './types';
-import { pauseWatch, restartWatch, startWatch, stoppedWatch } from './time';
+import { elapsedMs, isRunning, pauseWatch, restartWatch, startWatch, stoppedWatch } from './time';
 
 // ---------------------------------------------------------------------------
 // ID・ファクトリ
@@ -181,13 +181,18 @@ export type SelectResult = 'started' | 'alreadyDanced' | 'notFound';
 /**
  * バトラーをタップしたときの処理。
  * 担当者にする・踊った印を付ける・個人タイマーを初期値から開始、を同時に行う。
+ * ただし担当者なしで個人タイマーが動いている場合は、タイマーを引き継ぐ。
  */
 export function selectBattler(match: Match, battlerId: string, now: number): SelectResult {
   if (!match.battlers.some((b) => b.id === battlerId)) return 'notFound';
   if (isDanced(match, battlerId)) return 'alreadyDanced';
-  match.performances.push({ id: newId(), battlerId, startedAt: now });
+  // 名前を押す前に手動で個人タイマーを動かしていた場合（数人で踊り始めて1人が残る等）は、
+  // その時間から数え続ける。担当者がいる状態からの切り替えは、これまで通り初期値から開始
+  const continuing = match.currentBattlerId == null && isRunning(match.personalTimer);
+  const startedAt = continuing ? now - elapsedMs(match.personalTimer, now) : now;
+  match.performances.push({ id: newId(), battlerId, startedAt });
   match.currentBattlerId = battlerId;
-  match.personalTimer = restartWatch(now);
+  if (!continuing) match.personalTimer = restartWatch(now);
   // 試合が始まっていなければ、最初のパフォーマンスと同時に試合経過も開始
   match.matchTimer = startWatch(match.matchTimer, now);
   return 'started';

@@ -22,7 +22,7 @@ import {
   validateEvent,
   validateSettings,
 } from './model';
-import { elapsedMs, isRunning, timerView } from './time';
+import { elapsedMs, isRunning, startWatch, timerView } from './time';
 import type { BattleEvent, Match } from './types';
 
 function circleMatch(...names: string[]): Match {
@@ -59,6 +59,28 @@ describe('バトラー選択', () => {
     expect(isDanced(m, a.id)).toBe(true);
     // 試合経過は継続
     expect(m.matchTimer.runningSince).toBe(1000);
+  });
+
+  it('名前を押す前に手動で動かしていた個人タイマーは、名前を押してもそのまま続く', () => {
+    let m = circleMatch('A', 'B');
+    const [a, b] = m.battlers;
+    m = produce(m, (d) => void (d.personalTimer = startWatch(d.personalTimer, 1000)));
+    m = produce(m, (d) => void selectBattler(d, a.id, 15_000));
+    expect(m.currentBattlerId).toBe(a.id);
+    expect(m.personalTimer.runningSince).toBe(1000);
+    expect(elapsedMs(m.personalTimer, 15_000)).toBe(14_000);
+    // 踊り始めは手動で開始した時刻として記録
+    expect(m.performances[0].startedAt).toBe(1000);
+    // 次の人に切り替えたときは、これまで通り初期値から
+    m = produce(m, (d) => void selectBattler(d, b.id, 60_000));
+    expect(m.personalTimer).toEqual({ runningSince: 60_000, accumulatedMs: 0 });
+  });
+
+  it('手動で開始して一時停止中なら、名前を押すと初期値から開始する', () => {
+    let m = circleMatch('A');
+    m = produce(m, (d) => void (d.personalTimer = { runningSince: null, accumulatedMs: 5000 }));
+    m = produce(m, (d) => void selectBattler(d, d.battlers[0].id, 20_000));
+    expect(m.personalTimer).toEqual({ runningSince: 20_000, accumulatedMs: 0 });
   });
 
   it('踊った印のあるバトラーは通常タップで再選択できない', () => {
